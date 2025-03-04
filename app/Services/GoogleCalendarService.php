@@ -49,12 +49,12 @@ class GoogleCalendarService
             'summary' => $eventData['title'],
             'description' => $eventData['description'],
             'start' => [
-                'dateTime' => $startTime->format(\DateTime::ATOM),
-                'timeZone' => 'UTC',
+                'dateTime' => $startTime->format('Y-m-d\TH:i:s'),
+                'timeZone' => 'Asia/Yerevan',
             ],
             'end' => [
-                'dateTime' => $endTime->format(\DateTime::ATOM),
-                'timeZone' => 'UTC',
+                'dateTime' => $endTime->format('Y-m-d\TH:i:s'),
+                'timeZone' => 'Asia/Yerevan',
             ],
         ]);
 
@@ -67,16 +67,19 @@ class GoogleCalendarService
     {
         $event = $this->calendarService->events->get('primary', $eventId);
 
+        $updatedStartTime = new \DateTime($eventData['start_time']);
+        $updatedEndTime = new \DateTime($eventData['end_time']);
+
         $event->setSummary($eventData['title']);
         $event->setDescription($eventData['description']);
 
         $event->setStart(new \Google_Service_Calendar_EventDateTime([
-            'dateTime' => \Carbon\Carbon::parse($eventData['start_time'])->format(\DateTime::RFC3339),
-            'timeZone' => 'UTC'
+            'dateTime' => $updatedStartTime->format('Y-m-d\TH:i:s'),
+            'timeZone' => 'Asia/Yerevan',
         ]));
         $event->setEnd(new \Google_Service_Calendar_EventDateTime([
-            'dateTime' => \Carbon\Carbon::parse($eventData['end_time'])->format(\DateTime::RFC3339),
-            'timeZone' => 'UTC'
+            'dateTime' => $updatedEndTime->format('Y-m-d\TH:i:s'),
+            'timeZone' => 'Asia/Yerevan',
         ]));
 
         $updatedEvent = $this->calendarService->events->update('primary', $eventId, $event);

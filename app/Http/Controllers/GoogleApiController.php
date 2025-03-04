@@ -18,6 +18,13 @@ class GoogleApiController extends Controller
 
     public function create(Request $request): RedirectResponse
     {
+        $startTime = \Carbon\Carbon::parse($request->input('start_time'));
+        $endTime = \Carbon\Carbon::parse($request->input('end_time'));
+
+        if ($startTime > $endTime) {
+            throw new \Exception("Couldn't create event Start Time must be before End Time");
+        }
+
         $eventData = [
             'title' => $request->input('title'),
             'description' => $request->input('description'),
@@ -26,12 +33,13 @@ class GoogleApiController extends Controller
         ];
 
         $event = $this->googleCalendarService->createEvent($eventData);
+
         $event = Calendar::create([
             'google_event_id' => $event->id,
-            'title' => $event->summary,
-            'description' => $event->description,
-            'start_time' => $event->start['dateTime'],
-            'end_time' => $event->end['dateTime'],
+            'title' => $eventData['title'],
+            'description' => $eventData['description'],
+            'start_time' => $eventData['start_time'],
+            'end_time' => $eventData['end_time'],
             'created_at' => now(),
             'updated_at' => now(),
         ]);
@@ -59,7 +67,12 @@ class GoogleApiController extends Controller
 
     public function update($eventId, Request $request): RedirectResponse
     {
-        $googleEventId = Calendar::where('id', $eventId)->value('google_event_id');
+        $startTime = \Carbon\Carbon::parse($request->input('start_time'));
+        $endTime = \Carbon\Carbon::parse($request->input('end_time'));
+
+        if ($startTime > $endTime) {
+            throw new \Exception("Couldn't update the event Start Time must be before End Time");
+        }
 
         $eventData = [
             'title' => $request->input('title'),
@@ -76,13 +89,15 @@ class GoogleApiController extends Controller
             'updated_at' => now(),
         ]);
 
-       $this->googleCalendarService->updateEvent($googleEventId, $eventData);
+        if (!$event) {
+            throw new \Exception('Could not update event');
+        }
 
-       if (!$event) {
-           throw new \Exception('Could not update event');
-       }
+        $googleEventId = Calendar::where('id', $eventId)->value('google_event_id');
 
-       return redirect()->route('get.events');
+        $this->googleCalendarService->updateEvent($googleEventId, $eventData);
+
+        return redirect()->route('get.events');
     }
 
     public function delete($eventId): RedirectResponse
